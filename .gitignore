@@ -1,0 +1,22 @@
+# Python
+backend/venv/
+backend/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# React
+frontend/node_modules/
+frontend/build/
+frontend/.env
+frontend/.DS_Store
+
+# Environment files
+*.env
+
+# VS Code
+.vscode/
+
+# Miscellaneous
+*.log
+.DS_Store
