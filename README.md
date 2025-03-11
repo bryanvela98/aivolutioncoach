@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-AI-powered support platform for job seekers with disabilities
+AI-powered support platform for workers with disabilities
 
 ## Setup Instructions
 
