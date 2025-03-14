@@ -66,135 +66,178 @@ except Exception as e:
     print(f"Error al inicializar clientes: {str(e)}")
     exit(1)
 
+class AIvolutionCoachChat:
+    def __init__(self):
+        self.conversation_history = []
+        self.max_history = 5  # Máximo número de mensajes a mantener
+        self.system_prompt = '''You are AIvolution Coach, a professional and empathetic assistant 
+                            specialized EXCLUSIVELY in employability for people with disabilities.
 
+                            BEHAVIOR:
+                            - Use a friendly, respectful and motivating tone
+                            - Keep responses clear and structured 
+                            - Include relevant emojis to make communication more approachable
+                            - Be specific and concise in recommendations
+                            - Show empathy and understanding
+                            
+                            STRICT RESTRICTIONS:
+                            - ONLY provide information related to employment, job search, and workplace inclusion
+                            - Do not provide medical information or health advice
+                            - Do not make unrealistic employment promises
+                            - Do not discriminate based on disability type
+                            - Do not provide advice on personal, financial, or legal matters
+                            - Do not engage in conversations about topics unrelated to employment
+                            - If asked about topics outside employment scope, politely redirect to employment topics
+                            - If you don't have accurate information, clearly state it
+                            
+                            ALLOWED TOPICS:
+                            - Job search strategies
+                            - Workplace accommodations
+                            - Interview preparation
+                            - Resume and CV advice
+                            - Professional development
+                            - Workplace rights for people with disabilities
+                            - Employment support programs
+                            - Career guidance
+                            - Workplace communication
+                            - Professional networking
+                            
+                            RESPONSE FORMAT:
+                            1. Personalized greeting with emoji
+                            2. Clear and structured response (employment-focused only)
+                            3. Key points or recommendations if applicable
+                            4. Motivational closing message
 
-def get_chat_completion(prompt: str, model: str = chat_model, temperature: float = 0, 
-                       max_tokens: int = 200, frequency_penalty: float = 0) -> str:
-    """
-    Gets a response from the chat model
-    """
-    try:
-        messages = [
-            {"role": "system", "content": '''You are AIvolution Coach, a professional and empathetic assistant 
-                                          specialized in employability for people with disabilities.
-
-                                          BEHAVIOR:
-                                          - Use a friendly, respectful and motivating tone
-                                          - Keep responses clear and structured 
-                                          - Include relevant emojis to make communication more approachable
-                                          - Be specific and concise in recommendations
-                                          - Show empathy and understanding
-                                          
-                                          RESTRICTIONS:
-                                          - Do not provide medical information
-                                          - Do not make unrealistic employment promises
-                                          - Do not discriminate based on disability type
-                                          - If you don't have accurate information, clearly state it
-                                          
-                                          RESPONSE FORMAT:
-                                          1. Personalized greeting with emoji
-                                          2. Clear and structured response
-                                          3. Key points or recommendations if applicable
-                                          4. Motivational closing message'''},
-            {"role": "user", "content": prompt}
-        ]
+                            IF OFF-TOPIC:
+                            "I am specialized in employment assistance for people with disabilities. 
+                            Let me help you with job-related questions instead."'''
         
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            frequency_penalty=frequency_penalty
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        print(f"Error in get_chat_completion: {str(e)}")
-        return None
-
-def semantic_search(query: str, top_k: int = 3) -> pd.DataFrame:
-    """
-    Realiza una búsqueda semántica usando Azure Cognitive Search y embeddings
-    """
-    try:
-        results = search_client.search(
-            search_text=query, 
-            top=10,
-            include_total_count=True
-        )
-        
-        page_chunks = []
-        citations = []
-        for result in results:
-            page_chunks.append(result['page_text'])
-            citations.append(result['document_name'])
-            
-        embed_df = pd.DataFrame({
-            "page_chunks": page_chunks,
-            "citations": citations
-        })
-        
-        embed_df['embedding'] = embed_df["page_chunks"].apply(
-            lambda text: get_embedding(text, embedding_name=EMBEDDING_NAME)
-        )
-        
-        query_embedding = get_embedding(query, embedding_name=EMBEDDING_NAME)
-        embed_df["similarities"] = embed_df['embedding'].apply(
-            lambda embedding: cosine_similarity(embedding, query_embedding)
-        )
-        
-        top_results = (
-            embed_df.sort_values("similarities", ascending=False)
-            .head(top_k)
-            .reset_index(drop=True)
-        )
-        
-        return top_results
-        
-    except Exception as e:
-        print(f"Error en semantic_search: {str(e)}")
-        return pd.DataFrame()
-
-def generate_answer(query: str, context_results: pd.DataFrame) -> str:
-    """
-    Generates an answer based on search results
-    """
-    prompt = f"""
-    As AIvolution Coach, use the following information to provide a helpful response:
-
-    User Query: ```{query}```
-    Context Information: ```{context_results['page_chunks'].to_list()}```
-    Sources: ```{context_results['citations'].to_list()}```
-
-    Requirements:
-    1. Provide a clear and empathetic response
-    2. Include specific recommendations if applicable
-    3. Cite sources when possible
-    4. Keep the response concise, brief and well-structured
-    5. Use a motivating tone
-    6. Include relevant emojis to make the response more engaging
-    """
+    def add_message(self, role: str, content: str):
+        """Añade un mensaje al histórico de conversación"""
+        self.conversation_history.append({"role": role, "content": content})
+        if len(self.conversation_history) > self.max_history:
+            self.conversation_history.pop(0)
     
-    return get_chat_completion(prompt, temperature=0.5)
+    def get_chat_completion(self, prompt: str, model: str = chat_model, temperature: float = 0, 
+                          max_tokens: int = 200, frequency_penalty: float = 0) -> str:
+        """Gets a response from the chat model with conversation history"""
+        try:
+            messages = [
+                {"role": "system", "content": self.system_prompt}
+            ]
+            
+            # Añadir histórico de conversación
+            messages.extend(self.conversation_history)
+            
+            # Añadir prompt actual
+            messages.append({"role": "user", "content": prompt})
+            
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                frequency_penalty=frequency_penalty
+            )
+            
+            # Guardar la interacción en el histórico
+            self.add_message("user", prompt)
+            self.add_message("assistant", response.choices[0].message.content)
+            
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"Error in get_chat_completion: {str(e)}")
+            return None
 
-def search_and_answer(query: str) -> str:
-    """
-    Función principal que combina búsqueda y generación de respuesta
-    """
-    try:
-        search_results = semantic_search(query)
-        
-        if search_results.empty:
-            return "Lo siento, no pude encontrar información relevante para tu consulta."
-        
-        answer = generate_answer(query, search_results)
-        return answer
-        
-    except Exception as e:
-        print(f"Error en search_and_answer: {str(e)}")
-        return "Lo siento, ocurrió un error al procesar tu consulta."
+    def semantic_search(self, query: str, top_k: int = 3) -> pd.DataFrame:
+        """Realiza una búsqueda semántica usando Azure Cognitive Search y embeddings"""
+        try:
+            results = search_client.search(
+                search_text=query, 
+                top=10,
+                include_total_count=True
+            )
+            
+            page_chunks = []
+            citations = []
+            for result in results:
+                page_chunks.append(result['page_text'])
+                citations.append(result['document_name'])
+                
+            embed_df = pd.DataFrame({
+                "page_chunks": page_chunks,
+                "citations": citations
+            })
+            
+            embed_df['embedding'] = embed_df["page_chunks"].apply(
+                lambda text: get_embedding(text, embedding_name=EMBEDDING_NAME)
+            )
+            
+            query_embedding = get_embedding(query, embedding_name=EMBEDDING_NAME)
+            embed_df["similarities"] = embed_df['embedding'].apply(
+                lambda embedding: cosine_similarity(embedding, query_embedding)
+            )
+            
+            top_results = (
+                embed_df.sort_values("similarities", ascending=False)
+                .head(top_k)
+                .reset_index(drop=True)
+            )
+            
+            return top_results
+            
+        except Exception as e:
+            print(f"Error en semantic_search: {str(e)}")
+            return pd.DataFrame()
 
-# Ejemplo de uso
+    def search_and_answer(self, query: str) -> str:
+        """Función principal que combina búsqueda y generación de respuesta con contexto"""
+        try:
+            search_results = self.semantic_search(query)
+            
+            if search_results.empty:
+                return "Sorry, I couldn't find any relevant information for your query."
+            
+            context_prompt = f"""
+            As AIvolution Coach, use the following information to provide a helpful response:
+
+            User Query: ```{query}```
+            Context Information: ```{search_results['page_chunks'].to_list()}```
+            Sources: ```{search_results['citations'].to_list()}```
+
+            Previous conversation context: ```{self.conversation_history}```
+
+            Requirements:
+            1. Provide a clear and empathetic response
+            2. Include specific recommendations if applicable
+            3. Cite sources when possible
+            4. Keep the response concise, brief and well-structured
+            5. Use a motivating tone
+            6. Include relevant emojis to make the response more engaging
+            7. Reference previous conversation when relevant
+            """
+            
+            answer = self.get_chat_completion(context_prompt, temperature=0.5)
+            return answer
+            
+        except Exception as e:
+            print(f"Error en search_and_answer: {str(e)}")
+            return "Lo siento, ocurrió un error al procesar tu consulta."
+
+def chat_with_aivolution():
+    """Función interactiva para chatear con AIvolution Coach"""
+    coach = AIvolutionCoachChat()
+    print("¡Bienvenido! Soy AIvolution Coach. ¿En qué puedo ayudarte hoy? (Escribe 'salir' para terminar)")
+    
+    while True:
+        user_input = input("\nTú: ")
+        if user_input.lower() in ['salir', 'exit', 'quit']:
+            print("\nAIvolution Coach: ¡Hasta pronto! 👋 No dudes en volver si necesitas más ayuda.")
+            break
+            
+        response = coach.search_and_answer(user_input)
+        print("\nAIvolution Coach:", response)
+
 if __name__ == "__main__":
-    query = "Who you are"
-    response = search_and_answer(query)
-    print(response)
+    # Ejemplo de uso interactivo
+    chat_with_aivolution()
