@@ -4,6 +4,8 @@ backend/__pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.ipynb
+*.ipynb_checkpoints
 
 # React
 frontend/node_modules/

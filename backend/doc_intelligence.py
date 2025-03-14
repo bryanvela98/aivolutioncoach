@@ -102,7 +102,7 @@ def extract_local_single_file(file_name: str):
     result = poller.result()
     return get_page_content(file_name, result)
 
-def extract_files( folder_name: str, destination_folder_name: str):
+def extract_files( folder_name: str, destination_folder_name: str):             #Función para extraer archivos de un directorio
     os.makedirs(destination_folder_name, exist_ok=True)
     for file in os.listdir(folder_name):
         if file[-3:].upper() in ['PDF','JPG','PNG']:
@@ -114,7 +114,6 @@ def extract_files( folder_name: str, destination_folder_name: str):
             with open(output_file, "w") as f:
                 f.write(json.dumps(page_content))
 
-
 def get_page_content(file_name:str, result):
     page_content = []
     for page in result.pages:
@@ -125,37 +124,101 @@ def get_page_content(file_name:str, result):
                                 'page_content':' '.join(all_lines_content)})
     return {'filename':file_name, 'content':page_content}
 
-# Ejecutar la prueba
-if __name__ == "__main__":
-    #realizar_prueba_educativa()
-    #extract_files(RAW_DATA_FOLDER, EXTRACTED_DATA_FOLDER)
+def process_and_upload_documents(extracted_folder: str = EXTRACTED_DATA_FOLDER) -> List[dict]:
+    """
+    Processes JSON files from extracted folder and uploads them to Azure Cognitive Search
     
-    documents=[]
-    for file in os.listdir(EXTRACTED_DATA_FOLDER):
-        with open(os.path.join(EXTRACTED_DATA_FOLDER, file)) as f:
-            page_content= json.loads(f.read())
-        documents.extend(
-            [
+    Parameters:
+    -----------
+    extracted_folder : str
+        Path to the folder containing extracted JSON files
+        
+    Returns:
+    --------
+    List[dict]
+        List of processed documents
+    """
+    documents = []
+    
+    try:
+        for file in os.listdir(extracted_folder):
+            with open(os.path.join(extracted_folder, file)) as f:
+                page_content = json.loads(f.read())
+                
+            documents.extend([
                 {
-                    'document_id':page_content['filename'].split('\\')[-1].split('.')[0].replace(' ', '_') + '-' + str(page['page_number']),
-                    'document_name':page_content['filename'].split('\\')[-1],
-                    'file_path':page_content['filename'],              
-                    'page_number':page['page_number'],
-                    'page_text':page['page_content']
+                    'document_id': page_content['filename'].split('\\')[-1].split('.')[0].replace(' ', '_') + '-' + str(page['page_number']),
+                    'document_name': page_content['filename'].split('\\')[-1],
+                    'file_path': page_content['filename'],              
+                    'page_number': page['page_number'],
+                    'page_text': page['page_content']
                 }
                 for page in page_content['content']
-            ]
+            ])
+        
+        # Upload documents to search
+        upload_to_search(documents)
+        
+        return documents
+        
+    except Exception as e:
+        print(f"Error processing documents: {str(e)}")
+        raise
+
+def upload_to_search(documents: List[dict], endpoint: str = None, key: str = None, index_name: str = None) -> dict:
+    """
+    Uploads documents to Azure Cognitive Search
+    
+    Parameters:
+    -----------
+    documents : List[dict]
+        List of documents to upload
+    endpoint : str, optional
+        Azure Cognitive Search endpoint. If None, reads from environment variable
+    key : str, optional
+        Azure Cognitive Search key. If None, reads from environment variable
+    index_name : str, optional
+        Name of the index. If None, reads from environment variable
+    
+    Returns:
+    --------
+    dict
+        Result of the upload operation
+    """
+    
+    # Use parameters or environment variables
+    service_endpoint = endpoint or os.getenv("AZURE_COGNITIVE_SEARCH_ENDPOINT")
+    service_key = key or os.getenv("AZURE_COGNITIVE_SEARCH_KEY")
+    search_index_name = index_name or os.getenv("AZURE_COGNITIVE_SEARCH_DOC_INDEX_NAME")
+    
+    if not service_endpoint or not service_key or not search_index_name:
+        raise ValueError("Search endpoint, key and index name must be provided either as parameters or environment variables")
+    
+    try:
+        credential = AzureKeyCredential(service_key)
+        search_client = SearchClient(
+            endpoint=service_endpoint, 
+            index_name=search_index_name, 
+            credential=credential
         )
-    #Example of a single page of research paper file that will be indexed in Azure Cognitive Search
-    #print(documents[17])
+        
+        result = search_client.upload_documents(documents)
+        print(f"Successfully uploaded {len(documents)} documents")
+        return result
+        
+    except Exception as e:
+        print(f"Error uploading documents: {str(e)}")
+        raise
+
+# Ejecutar la prueba
+if __name__ == "__main__":
     
+    # Extraer archivos
+    extract_files(RAW_DATA_FOLDER, EXTRACTED_DATA_FOLDER)
     
-    # Create an SDK client
-    service_endpoint = os.getenv("AZURE_COGNITIVE_SEARCH_ENDPOINT")   
-    key = os.getenv("AZURE_COGNITIVE_SEARCH_KEY")
-    credential = AzureKeyCredential(key)
-    index_name = os.getenv("AZURE_COGNITIVE_SEARCH_DOC_INDEX_NAME")
-    
-    search_client = SearchClient(endpoint=service_endpoint, index_name=index_name, credential=credential)
-    result = search_client.upload_documents(documents)  
-    print(f"Uploaded {len(documents)} documents")  
+    # Procesar y subir documentos
+    try:
+        documents = process_and_upload_documents()
+        print(f"Successfully processed and uploaded {len(documents)} documents")
+    except Exception as e:
+        print(f"Error in main process: {str(e)}")
