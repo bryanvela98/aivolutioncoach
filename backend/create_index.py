@@ -16,7 +16,7 @@ from azure.search.documents.indexes.models import (
 )
 from dotenv import load_dotenv
 
-def create_search_index(index_name: str, endpoint: str = None, key: str = None):
+def create_search_index(index_name: str = None, endpoint: str = None, key: str = None):
     """
     Creates or updates a search index in Azure Cognitive Search
     
@@ -40,6 +40,7 @@ def create_search_index(index_name: str, endpoint: str = None, key: str = None):
     # Use parameters or environment variables
     service_endpoint = endpoint or os.getenv("AZURE_COGNITIVE_SEARCH_ENDPOINT")
     service_key = key or os.getenv("AZURE_COGNITIVE_SEARCH_KEY")
+    search_index_name = index_name or os.getenv("AZURE_COGNITIVE_SEARCH_DOC_INDEX_NAME")
     
     if not service_endpoint or not service_key:
         raise ValueError("Search endpoint and key must be provided either as parameters or environment variables")
@@ -73,7 +74,7 @@ def create_search_index(index_name: str, endpoint: str = None, key: str = None):
     
     # Create the index
     index = SearchIndex(
-        name=index_name, 
+        name=search_index_name, 
         fields=fields, 
         semantic_settings=semantic_settings
     )
@@ -83,3 +84,8 @@ def create_search_index(index_name: str, endpoint: str = None, key: str = None):
     print(f'Index {result.name} created or updated successfully')
     
     return result
+
+if __name__ == "__main__":
+    # Create or update the search index
+    create_search_index()
+    

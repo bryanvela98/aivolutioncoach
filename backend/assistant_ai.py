@@ -75,7 +75,7 @@ class AIvolutionCoachChat:
 
                             BEHAVIOR:
                             - Use a friendly, respectful and motivating tone
-                            - Keep responses clear and structured 
+                            - Keep responses clear and brief
                             - Include relevant emojis to make communication more approachable
                             - Be specific and concise in recommendations
                             - Show empathy and understanding
@@ -85,7 +85,6 @@ class AIvolutionCoachChat:
                             - Do not provide medical information or health advice
                             - Do not make unrealistic employment promises
                             - Do not discriminate based on disability type
-                            - Do not provide advice on personal, financial, or legal matters
                             - Do not engage in conversations about topics unrelated to employment
                             - If asked about topics outside employment scope, politely redirect to employment topics
                             - If you don't have accurate information, clearly state it
@@ -104,7 +103,7 @@ class AIvolutionCoachChat:
                             
                             RESPONSE FORMAT:
                             1. Personalized greeting with emoji
-                            2. Clear and structured response (employment-focused only)
+                            2. Clear and brief response (employment-focused only)
                             3. Key points or recommendations if applicable
                             4. Motivational closing message
 
@@ -119,7 +118,7 @@ class AIvolutionCoachChat:
             self.conversation_history.pop(0)
     
     def get_chat_completion(self, prompt: str, model: str = chat_model, temperature: float = 0, 
-                          max_tokens: int = 200, frequency_penalty: float = 0) -> str:
+                          max_tokens: int = 15000, frequency_penalty: float = 0) -> str:
         """Gets a response from the chat model with conversation history"""
         try:
             messages = [
@@ -211,10 +210,9 @@ class AIvolutionCoachChat:
             1. Provide a clear and empathetic response
             2. Include specific recommendations if applicable
             3. Cite sources when possible
-            4. Keep the response concise, brief and well-structured
+            4. Keep the response concise and concise
             5. Use a motivating tone
-            6. Include relevant emojis to make the response more engaging
-            7. Reference previous conversation when relevant
+            6. Reference previous conversation when relevant
             """
             
             answer = self.get_chat_completion(context_prompt, temperature=0.5)
@@ -227,7 +225,7 @@ class AIvolutionCoachChat:
 def chat_with_aivolution():
     """Función interactiva para chatear con AIvolution Coach"""
     coach = AIvolutionCoachChat()
-    print("¡Bienvenido! Soy AIvolution Coach. ¿En qué puedo ayudarte hoy? (Escribe 'salir' para terminar)")
+    print("¡Welcome! I'm AIvolution Coach. What can I help you today? (Type 'exit' to end)")
     
     while True:
         user_input = input("\nTú: ")
