@@ -194,8 +194,8 @@ class AIvolutionCoachChat:
         try:
             search_results = self.semantic_search(query)
             
-            if search_results.empty:
-                return "Sorry, I couldn't find any relevant information for your query."
+            #if search_results.empty:
+                #return "Sorry, I couldn't find any relevant information for your query."
             
             context_prompt = f"""
             As AIvolution Coach, use the following information to provide a helpful response:
