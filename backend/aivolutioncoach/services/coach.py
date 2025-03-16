@@ -23,7 +23,6 @@ from azure.ai.formrecognizer import DocumentAnalysisClient
 from typing import List
 import openai
 import numpy as np
-from doc_intelligence import get_embedding, cosine_similarity
 from dotenv import load_dotenv, find_dotenv
 
 # Cargar variables de entorno
@@ -65,6 +64,38 @@ try:
 except Exception as e:
     print(f"Error al inicializar clientes: {str(e)}")
     exit(1)
+
+# Función para obtener embeddings
+def get_embedding(text: str, embedding_name: str = EMBEDDING_NAME) -> List[float]:
+    """
+    Obtiene el embedding de un texto usando la API de OpenAI
+    
+    Args:
+        text (str): Texto para obtener el embedding
+        model (str): Modelo de embedding a usar
+        
+    Returns:
+        List[float]: Vector de embedding
+    """
+    response = client.embeddings.create(
+        model=embedding_name,
+        input=text
+    )
+    return response.data[0].embedding
+
+# Función para calcular similitud del coseno
+def cosine_similarity(a: List[float], b: List[float]) -> float:
+    """
+    Calcula la similitud del coseno entre dos vectores
+    
+    Args:
+        a (List[float]): Primer vector
+        b (List[float]): Segundo vector
+        
+    Returns:
+        float: Similitud del coseno entre los vectores
+    """
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 class AIvolutionCoachChat:
     def __init__(self):
@@ -222,6 +253,12 @@ class AIvolutionCoachChat:
             print(f"Error en search_and_answer: {str(e)}")
             return "Lo siento, ocurrió un error al procesar tu consulta."
 
+
+
+
+####################################################
+# FOR TESTING
+####################################################
 def chat_with_aivolution():
     """Función interactiva para chatear con AIvolution Coach"""
     coach = AIvolutionCoachChat()
