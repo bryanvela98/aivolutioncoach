@@ -8,7 +8,10 @@ speech_service = SpeechService()
 def speech_to_text():
     try:
         command = speech_service.transcribe_command()
-        return jsonify({'success': True, 'command': command})
+        if command.lower() == "start.":
+            return jsonify({'success': True, 'message': 'Start command recognized', 'command': command})
+        else:
+            return jsonify({'success': False, 'message': 'Waiting for "Start" command', 'command': command})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

@@ -31,7 +31,7 @@ class SpeechService:
         return command
 
     def speak_output(self, text):
-        speaked_text = 'Did you say: ' + text
+        speaked_text = text
         # Configure speech synthesis
         self.speech_config.speech_synthesis_voice_name = "en-GB-RyanNeural"
         speech_synthesizer = speech_sdk.SpeechSynthesizer(self.speech_config)

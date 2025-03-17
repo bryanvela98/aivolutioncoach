@@ -4,9 +4,9 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 
 # Importa los blueprints
-from aivolutioncoach.routes.chat import chat_bp
-from aivolutioncoach.routes.report import report_bp
-from aivolutioncoach.routes.speech import speech_bp
+""" from aivolutioncoach.routes.chat import chat_bp
+from aivolutioncoach.routes.report import report_bp """
+from aivolutioncoach.routes.speechStart import speech_bp
 
 def create_app():
     load_dotenv()  # Carga variables de entorno
@@ -15,8 +15,8 @@ def create_app():
     CORS(app)
 
     # Registrar blueprints
-    app.register_blueprint(chat_bp, url_prefix='/api')
-    app.register_blueprint(report_bp, url_prefix='/api')
+    """ app.register_blueprint(chat_bp, url_prefix='/api')
+    app.register_blueprint(report_bp, url_prefix='/api') """
     app.register_blueprint(speech_bp)
 
     # Configuraciones adicionales, inicialización de extensiones, DB, etc.
