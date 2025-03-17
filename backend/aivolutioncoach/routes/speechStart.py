@@ -4,7 +4,7 @@ from aivolutioncoach.services.speech_utils import SpeechService
 speech_bp = Blueprint('speech', __name__)
 speech_service = SpeechService()
 
-@speech_bp.route('/api/speech-to-text', methods=['POST'])
+@speech_bp.route('/api/speech-to-text-start', methods=['POST'])
 def speech_to_text():
     try:
         command = speech_service.transcribe_command()
@@ -15,7 +15,7 @@ def speech_to_text():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@speech_bp.route('/api/text-to-speech', methods=['POST'])
+@speech_bp.route('/api/text-to-speech-start', methods=['POST'])
 def text_to_speech():
     try:
         data = request.json

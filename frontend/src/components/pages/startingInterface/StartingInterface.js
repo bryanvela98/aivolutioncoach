@@ -16,7 +16,7 @@ const StartingInterface = () => {
   const speakPhrase = async () => {
     try {
       setIsSpeaking(true); // Mark TTS as active
-      const response = await fetch("/api/text-to-speech", {
+      const response = await fetch("/api/text-to-speech-start", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -43,7 +43,9 @@ const StartingInterface = () => {
     if (isSpeaking) return; // Skip STT if TTS is active
 
     try {
-      const response = await fetch("/api/speech-to-text", { method: "POST" });
+      const response = await fetch("/api/speech-to-text-start", {
+        method: "POST",
+      });
       const data = await response.json();
       if (data.success && data.message === "Start command recognized") {
         setStatus("Start command recognized! Processing input...");
