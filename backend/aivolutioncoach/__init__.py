@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 # Importa los blueprints
 """ from aivolutioncoach.routes.chat import chat_bp
 from aivolutioncoach.routes.report import report_bp """
-from aivolutioncoach.routes.speechStart import speech_bp
+from aivolutioncoach.routes.TTS_STT import speech_bp
 
 def create_app():
     load_dotenv()  # Carga variables de entorno

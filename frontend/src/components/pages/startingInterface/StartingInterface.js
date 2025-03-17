@@ -6,17 +6,16 @@ const StartingInterface = () => {
   const [recognizedText, setRecognizedText] = useState("");
   const [error, setError] = useState("");
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [intervalId, setIntervalId] = useState(null);
-
-  const navigate = useNavigate(); // React Router hook for navigation
+  const navigate = useNavigate();
 
   const phraseToSpeak =
-    "Are you ready? Please say START or Click to begin the session.";
+    "Are you ready? Please say START or click to begin the session.";
 
+  // Function to handle TTS
   const speakPhrase = async () => {
     try {
       setIsSpeaking(true); // Mark TTS as active
-      const response = await fetch("/api/text-to-speech-start", {
+      const response = await fetch("/api/text-to-speech", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -28,9 +27,9 @@ const StartingInterface = () => {
         throw new Error("Failed to fetch TTS from the backend.");
       }
 
-      // Simulate TTS playback duration (e.g., 5 seconds)
+      // Simulate TTS playback duration
       setTimeout(() => {
-        setIsSpeaking(false); // Mark TTS as inactive after playback
+        setIsSpeaking(false);
       }, 4000);
     } catch (err) {
       console.error("Error in speakPhrase:", err);
@@ -39,45 +38,50 @@ const StartingInterface = () => {
     }
   };
 
+  // Function to handle STT
   const listenForStart = async () => {
     if (isSpeaking) return; // Skip STT if TTS is active
 
     try {
-      const response = await fetch("/api/speech-to-text-start", {
+      const response = await fetch("/api/speech-to-text", {
         method: "POST",
       });
       const data = await response.json();
-      if (data.success && data.message === "Start command recognized") {
-        setStatus("Start command recognized! Processing input...");
-        setRecognizedText(data.command);
-        setError("");
-        // Stop speaking and clear the interval when the command is recognized
-        clearInterval(intervalId);
 
-        // Navigate to the next page
-        navigate("/next");
+      if (data.success) {
+        const command = data.command.toLowerCase();
+        setRecognizedText(command);
+
+        if (command === "start.") {
+          setStatus("Start command recognized! Proceeding...");
+          setError("");
+
+          // Navigate to the next page
+          navigate("/next");
+        } else {
+          setStatus('Listening for "Start"...');
+        }
       } else {
-        setStatus(data.message || 'Listening for "Start"...');
-        setRecognizedText(data.command || "");
+        setError(data.error || "Speech recognition failed.");
       }
     } catch (err) {
+      console.error("Error in listenForStart:", err);
       setError("Failed to connect to the server.");
     }
   };
 
   useEffect(() => {
     // Start speaking the phrase every 12 seconds
-    const id = setInterval(() => {
+    const speakInterval = setInterval(() => {
       speakPhrase();
-    }, 12000);
-    setIntervalId(id);
+    }, 10000);
 
     // Continuously listen for the "Start" command
     const listenInterval = setInterval(() => {
       if (!isSpeaking) {
         listenForStart();
       }
-    }, 2000);
+    }, 500);
 
     // Attach a global click listener to the window
     const handleClick = (event) => {
@@ -90,11 +94,11 @@ const StartingInterface = () => {
 
     // Cleanup intervals and event listener on component unmount
     return () => {
-      clearInterval(id);
+      clearInterval(speakInterval);
       clearInterval(listenInterval);
       window.removeEventListener("click", handleClick);
     };
-  }, [isSpeaking]); // Add isSpeaking as a dependency
+  }, [isSpeaking]);
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
