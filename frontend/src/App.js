@@ -8,7 +8,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<StartingInterface />} />
-        <Route path="/next" element={<GetDisabilityInterface />} />
+        <Route path="/start" element={<GetDisabilityInterface />} />
       </Routes>
     </Router>
   );

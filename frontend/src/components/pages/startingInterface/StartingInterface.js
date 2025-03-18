@@ -57,7 +57,7 @@ const StartingInterface = () => {
           setError("");
 
           // Navigate to the next page
-          navigate("/next");
+          navigate("/start");
         } else {
           setStatus('Listening for "Start"...');
         }
@@ -87,7 +87,7 @@ const StartingInterface = () => {
     const handleClick = (event) => {
       if (event.button === 0) {
         // Check if it's a left-click
-        navigate("/next");
+        navigate("/start");
       }
     };
     window.addEventListener("click", handleClick);
